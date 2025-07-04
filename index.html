@@ -1,0 +1,924 @@
+<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;"><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;"><meta http-equiv="x-dns-prefetch-control" content="off"><meta name="x-poe-datastore-behavior" content="disabled"><meta name="x-poe-allow-downloads" content="true"><script src="https://puc.poecdn.net/standard.25f6d5ebb7608dc2f276.js"></script>
+    <meta charset="utf-8">
+    <title>Neural Network Concept Visualization</title>
+    <link rel="icon" type="image/x-icon" href="icon.png">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+  <script src="https://puc.poecdn.net/disableWebRTC.9710cebe07429a9e8e06.js"></script><script src="https://puc.poecdn.net/tw.b9024aecac666455e183.js"></script><script src="https://puc.poecdn.net/deps.faccd16000d314dc16d5.js"></script><script src="https://puc.poecdn.net/exports.b0f0f482cdeb5302b0b9.js"></script><script src="https://puc.poecdn.net/renderer.75c73ae6b4235f62945a.js"></script><script>Object.defineProperty(exports, "__esModule", {value: true}); function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; } function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; }var _react = require('react'); var _react2 = _interopRequireDefault(_react);
+var _lucidereact = require('lucide-react');
+
+function NeuralNetworkVisualizer() {
+  const [activeTab, setActiveTab] = _react.useState.call(void 0, 'network');
+  const [networkData, setNetworkData] = _react.useState.call(void 0, null);
+  const [animationData, setAnimationData] = _react.useState.call(void 0, null);
+  const [currentStepIndex, setCurrentStepIndex] = _react.useState.call(void 0, -1);
+  const [isPlaying, setIsPlaying] = _react.useState.call(void 0, false);
+  const [playbackInterval, setPlaybackInterval] = _react.useState.call(void 0, 1500); // milliseconds between steps
+  const [nodes, setNodes] = _react.useState.call(void 0, []);
+  const [links, setLinks] = _react.useState.call(void 0, []);
+  const [nodeColors, setNodeColors] = _react.useState.call(void 0, {});
+  const [networkError, setNetworkError] = _react.useState.call(void 0, '');
+  const [animationError, setAnimationError] = _react.useState.call(void 0, '');
+  const [networkSuccess, setNetworkSuccess] = _react.useState.call(void 0, '');
+  const [animationSuccess, setAnimationSuccess] = _react.useState.call(void 0, '');
+  const [menuOpen, setMenuOpen] = _react.useState.call(void 0, false);
+  const [menuButtonPosition, setMenuButtonPosition] = _react.useState.call(void 0, { x: 0, y: 0 });
+  
+  const svgRef = _react.useRef.call(void 0, null);
+  const animationTimeoutRef = _react.useRef.call(void 0, null);
+  const networkFileRef = _react.useRef.call(void 0, null);
+  const animationFileRef = _react.useRef.call(void 0, null);
+  const menuButtonRef = _react.useRef.call(void 0, null);
+
+  const [networkEditor, setNetworkEditor] = _react.useState.call(void 0, `{
+  "layers": [
+    {
+      "name": "Input",
+      "nodes": 3
+    },
+    {
+      "name": "Hidden 1",
+      "nodes": 4
+    },
+    {
+      "name": "Hidden 2",
+      "nodes": 3
+    },
+    {
+      "name": "Output",
+      "nodes": 2
+    }
+  ],
+  "connections": [
+    {
+      "type": "fully_connected",
+      "from": 0,
+      "to": 1
+    },
+    {
+      "type": "fully_connected", 
+      "from": 1,
+      "to": 2
+    },
+    {
+      "type": "custom",
+      "links": [
+        {"from": {"layer": 2, "node": 0}, "to": {"layer": 3, "node": 0}},
+        {"from": {"layer": 2, "node": 1}, "to": {"layer": 3, "node": 1}}
+      ]
+    }
+  ]
+}`);
+
+  const [animationEditor, setAnimationEditor] = _react.useState.call(void 0, `{
+  "steps": [
+    {
+      "name": "Input Activation",
+      "duration": 1000,
+      "glowNodes": ["0-0", "0-1", "0-2"],
+      "glowLinks": [],
+      "nodeColors": {
+        "0-0": "#f97316",
+        "0-1": "#f97316",
+        "0-2": "#f97316"
+      }
+    },
+    {
+      "name": "Forward to Hidden 1",
+      "duration": 1500,
+      "glowNodes": ["1-0", "1-1", "1-2", "1-3"],
+      "glowLinks": ["0-0_1-0", "0-1_1-1", "0-2_1-2"],
+      "nodeColors": {
+        "1-0": "#10b981",
+        "1-1": "#10b981",
+        "1-2": "#10b981",
+        "1-3": "#10b981"
+      }
+    },
+    {
+      "name": "Forward to Hidden 2",
+      "duration": 1500,
+      "glowNodes": ["2-0", "2-1", "2-2"],
+      "glowLinks": ["1-0_2-0", "1-1_2-1", "1-2_2-2"],
+      "nodeColors": {
+        "2-0": "#8b5cf6",
+        "2-1": "#8b5cf6",
+        "2-2": "#8b5cf6"
+      }
+    },
+    {
+      "name": "Output Activation",
+      "duration": 1000,
+      "glowNodes": ["3-0", "3-1"],
+      "glowLinks": ["2-0_3-0", "2-1_3-1"],
+      "nodeColors": {
+        "3-0": "#ef4444",
+        "3-1": "#ef4444"
+      }
+    }
+  ]
+}`);
+
+  const showError = (setter, message) => {
+    setter(message);
+    setTimeout(() => setter(''), 3000);
+  };
+
+  const showSuccess = (setter, message) => {
+    setter(message);
+    setTimeout(() => setter(''), 2000);
+  };
+
+  const updateNetwork = () => {
+    try {
+      const data = JSON.parse(networkEditor);
+      if (!data.layers || !Array.isArray(data.layers)) {
+        throw new Error('Invalid network structure: layers must be an array');
+      }
+      setNetworkData(data);
+      showSuccess(setNetworkSuccess, 'Network updated successfully!');
+    } catch (error) {
+      showError(setNetworkError, 'Error: ' + error.message);
+    }
+  };
+
+  const updateAnimation = () => {
+    try {
+      const data = JSON.parse(animationEditor);
+      if (!data.steps || !Array.isArray(data.steps)) {
+        throw new Error('Invalid animation structure: steps must be an array');
+      }
+      setAnimationData(data);
+      resetAnimation();
+      showSuccess(setAnimationSuccess, 'Animation updated successfully!');
+    } catch (error) {
+      showError(setAnimationError, 'Error: ' + error.message);
+    }
+  };
+
+  const exportNetwork = () => {
+    if (!networkData) {
+      showError(setNetworkError, 'No network to export');
+      return;
+    }
+    const dataStr = JSON.stringify(networkData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = 'neural_network.json';
+    link.click();
+    showSuccess(setNetworkSuccess, 'Network exported successfully!');
+    setMenuOpen(false);
+  };
+
+  const exportAnimation = () => {
+    if (!animationData) {
+      showError(setAnimationError, 'No animation to export');
+      return;
+    }
+    const dataStr = JSON.stringify(animationData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = 'neural_animation.json';
+    link.click();
+    showSuccess(setAnimationSuccess, 'Animation exported successfully!');
+    setMenuOpen(false);
+  };
+
+  const importNetwork = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedData = JSON.parse(e.target.result);
+        setNetworkEditor(JSON.stringify(importedData, null, 2));
+        setNetworkData(importedData);
+        showSuccess(setNetworkSuccess, 'Network imported successfully!');
+      } catch (error) {
+        showError(setNetworkError, 'Invalid JSON file: ' + error.message);
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+    setMenuOpen(false);
+  };
+
+  const importAnimation = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedData = JSON.parse(e.target.result);
+        setAnimationEditor(JSON.stringify(importedData, null, 2));
+        setAnimationData(importedData);
+        showSuccess(setAnimationSuccess, 'Animation imported successfully!');
+      } catch (error) {
+        showError(setAnimationError, 'Invalid JSON file: ' + error.message);
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+    setMenuOpen(false);
+  };
+
+  const openAuthorWebsite = () => {
+    window.open('https://aeromechanic.fun', '_blank');
+    setMenuOpen(false);
+  };
+
+  const handleMenuToggle = () => {
+    if (!menuOpen && menuButtonRef.current) {
+      const rect = menuButtonRef.current.getBoundingClientRect();
+      setMenuButtonPosition({
+        x: rect.right - 224, // 224px = w-56 (14rem * 16px)
+        y: rect.bottom + 8   // 8px spacing
+      });
+    }
+    setMenuOpen(!menuOpen);
+  };
+
+  const createLink = (fromLayer, fromNode, toLayer, toNode, svg, newNodes) => {
+    const fromNodeData = newNodes.find(n => n.id === `${fromLayer}-${fromNode}`);
+    const toNodeData = newNodes.find(n => n.id === `${toLayer}-${toNode}`);
+    
+    if (!fromNodeData || !toNodeData) return null;
+
+    const linkId = `${fromLayer}-${fromNode}_${toLayer}-${toNode}`;
+    return { id: linkId, from: fromNodeData, to: toNodeData };
+  };
+
+  const createConnections = (newNodes) => {
+    if (!_optionalChain([networkData, 'optionalAccess', _ => _.connections])) return [];
+    
+    const newLinks = [];
+
+    if (networkData.connections === 'fully_connected') {
+      const layers = networkData.layers;
+      for (let i = 0; i < layers.length - 1; i++) {
+        const currentLayer = layers[i];
+        const nextLayer = layers[i + 1];
+        
+        for (let j = 0; j < currentLayer.nodes; j++) {
+          for (let k = 0; k < nextLayer.nodes; k++) {
+            const link = createLink(i, j, i + 1, k, null, newNodes);
+            if (link) newLinks.push(link);
+          }
+        }
+      }
+    } else if (Array.isArray(networkData.connections)) {
+      networkData.connections.forEach(connection => {
+        if (connection.type === 'fully_connected') {
+          const fromLayerIndex = connection.from;
+          const toLayerIndex = connection.to;
+          
+          if (fromLayerIndex >= 0 && fromLayerIndex < networkData.layers.length &&
+              toLayerIndex >= 0 && toLayerIndex < networkData.layers.length) {
+            
+            const fromLayer = networkData.layers[fromLayerIndex];
+            const toLayer = networkData.layers[toLayerIndex];
+            
+            for (let i = 0; i < fromLayer.nodes; i++) {
+              for (let j = 0; j < toLayer.nodes; j++) {
+                const link = createLink(fromLayerIndex, i, toLayerIndex, j, null, newNodes);
+                if (link) newLinks.push(link);
+              }
+            }
+          }
+        } else if (connection.type === 'custom' && connection.links) {
+          connection.links.forEach(link => {
+            const newLink = createLink(
+              link.from.layer, 
+              link.from.node, 
+              link.to.layer, 
+              link.to.node,
+              null,
+              newNodes
+            );
+            if (newLink) newLinks.push(newLink);
+          });
+        }
+      });
+    }
+    
+    return newLinks;
+  };
+
+  const renderNetwork = () => {
+    if (!networkData || !svgRef.current) return;
+
+    const svg = svgRef.current;
+    const rect = svg.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    
+    const layers = networkData.layers;
+    const layerWidth = width / (layers.length + 1);
+    const maxNodesInLayer = Math.max(...layers.map(l => l.nodes));
+    const nodeRadius = Math.min(20, (height - 100) / (maxNodesInLayer * 3));
+
+    const newNodes = [];
+    
+    layers.forEach((layer, layerIndex) => {
+      const x = layerWidth * (layerIndex + 1);
+      const layerHeight = height - 80;
+      const nodeSpacing = layerHeight / (layer.nodes + 1);
+
+      for (let nodeIndex = 0; nodeIndex < layer.nodes; nodeIndex++) {
+        const y = nodeSpacing * (nodeIndex + 1) + 40;
+        const nodeId = `${layerIndex}-${nodeIndex}`;
+        
+        newNodes.push({ 
+          id: nodeId, 
+          x, 
+          y, 
+          radius: nodeRadius,
+          layerName: layer.name,
+          layerIndex,
+          nodeIndex
+        });
+      }
+    });
+
+    const newLinks = createConnections(newNodes);
+    
+    setNodes(newNodes);
+    setLinks(newLinks);
+    setNodeColors({});
+  };
+
+  const applyStep = (step) => {
+    const newNodeColors = { ...nodeColors };
+    
+    if (step.nodeColors) {
+      Object.entries(step.nodeColors).forEach(([nodeId, color]) => {
+        newNodeColors[nodeId] = color;
+      });
+    }
+    
+    setNodeColors(newNodeColors);
+  };
+
+  const nextStep = () => {
+    if (!_optionalChain([animationData, 'optionalAccess', _2 => _2.steps])) return;
+    
+    if (currentStepIndex < animationData.steps.length - 1) {
+      const newIndex = currentStepIndex + 1;
+      setCurrentStepIndex(newIndex);
+      applyStep(animationData.steps[newIndex]);
+    }
+  };
+
+  const previousStep = () => {
+    if (currentStepIndex > 0) {
+      const newIndex = currentStepIndex - 1;
+      setCurrentStepIndex(newIndex);
+      applyStep(animationData.steps[newIndex]);
+    } else if (currentStepIndex === 0) {
+      setCurrentStepIndex(-1);
+      setNodeColors({});
+    }
+  };
+
+  const resetAnimation = () => {
+    setIsPlaying(false);
+    if (animationTimeoutRef.current) {
+      clearTimeout(animationTimeoutRef.current);
+      animationTimeoutRef.current = null;
+    }
+    setCurrentStepIndex(-1);
+    setNodeColors({});
+  };
+
+  const playPause = () => {
+    if (isPlaying) {
+      setIsPlaying(false);
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+        animationTimeoutRef.current = null;
+      }
+    } else {
+      if (!_optionalChain([animationData, 'optionalAccess', _3 => _3.steps])) return;
+      setIsPlaying(true);
+      
+      const playNextStep = () => {
+        setCurrentStepIndex(prevIndex => {
+          const newIndex = prevIndex + 1;
+          
+          if (newIndex < animationData.steps.length) {
+            applyStep(animationData.steps[newIndex]);
+            
+            if (newIndex < animationData.steps.length - 1) {
+              animationTimeoutRef.current = setTimeout(playNextStep, playbackInterval);
+            } else {
+              setIsPlaying(false);
+            }
+            
+            return newIndex;
+          } else {
+            setIsPlaying(false);
+            return prevIndex;
+          }
+        });
+      };
+      
+      // Start from the next step
+      if (currentStepIndex < animationData.steps.length - 1) {
+        playNextStep();
+      } else {
+        // If at the end, restart from beginning
+        setCurrentStepIndex(-1);
+        setTimeout(playNextStep, 100);
+      }
+    }
+  };
+
+  _react.useEffect.call(void 0, () => {
+    updateNetwork();
+    updateAnimation();
+  }, []);
+
+  _react.useEffect.call(void 0, () => {
+    const handleResize = () => {
+      if (networkData) {
+        setTimeout(renderNetwork, 100);
+      }
+    };
+
+    renderNetwork();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [networkData]);
+
+  _react.useEffect.call(void 0, () => {
+    return () => {
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const getCurrentStepInfo = () => {
+    if (currentStepIndex >= 0 && _optionalChain([animationData, 'optionalAccess', _4 => _4.steps, 'access', _5 => _5[currentStepIndex]])) {
+      return `${currentStepIndex + 1}/${animationData.steps.length} - ${animationData.steps[currentStepIndex].name}`;
+    }
+    return 'None';
+  };
+
+  const isNodeGlowing = (nodeId) => {
+    if (currentStepIndex >= 0 && _optionalChain([animationData, 'optionalAccess', _6 => _6.steps, 'access', _7 => _7[currentStepIndex], 'optionalAccess', _8 => _8.glowNodes])) {
+      return animationData.steps[currentStepIndex].glowNodes.includes(nodeId);
+    }
+    return false;
+  };
+
+  const isLinkGlowing = (linkId) => {
+    if (currentStepIndex >= 0 && _optionalChain([animationData, 'optionalAccess', _9 => _9.steps, 'access', _10 => _10[currentStepIndex], 'optionalAccess', _11 => _11.glowLinks])) {
+      return animationData.steps[currentStepIndex].glowLinks.includes(linkId);
+    }
+    return false;
+  };
+
+  const handleIntervalChange = (newInterval) => {
+    setPlaybackInterval(newInterval);
+  };
+
+  return (
+    _react2.default.createElement('div', { className: "h-screen bg-gradient-to-br from-slate-50 to-blue-50 text-slate-800 flex flex-col overflow-hidden"       ,}
+      , _react2.default.createElement('style', { jsx: true,}, `
+        /* Custom scrollbar styles */
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 4px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          border-radius: 4px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(135deg, #2563eb, #7c3aed);
+        }
+        
+        /* Firefox scrollbar */
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: #3b82f6 #f1f5f9;
+        }
+
+        /* Number input styling */
+        .interval-input::-webkit-outer-spin-button,
+        .interval-input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        
+        .interval-input[type=number] {
+          -moz-appearance: textfield;
+        }
+      `)
+
+      /* Title Bar */
+      , _react2.default.createElement('div', { className: "bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-6 py-4 flex items-center justify-between flex-shrink-0 shadow-sm"          ,}
+        , _react2.default.createElement('h1', { className: "text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"      ,}, "Neural Network Concept Visualization"
+
+        )
+
+        , _react2.default.createElement('div', { className: "flex items-center gap-4"  ,}
+          /* Update Buttons */
+          , _react2.default.createElement('div', { className: "flex items-center gap-2"  ,}
+            , _react2.default.createElement('button', {
+              onClick: updateNetwork,
+              className: `flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-md ${
+                activeTab === 'network' 
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white' 
+                  : 'bg-white/60 hover:bg-white border border-slate-200/60 text-slate-600 hover:text-blue-600'
+              }`,}
+
+              , _react2.default.createElement(_lucidereact.RefreshCw, { size: 12,} ), "Update Network"
+
+            )
+            , _react2.default.createElement('button', {
+              onClick: updateAnimation,
+              className: `flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-md ${
+                activeTab === 'animation' 
+                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white' 
+                  : 'bg-white/60 hover:bg-white border border-slate-200/60 text-slate-600 hover:text-purple-600'
+              }`,}
+
+              , _react2.default.createElement(_lucidereact.RefreshCw, { size: 12,} ), "Update Animation"
+
+            )
+          )
+
+          /* Author Website Button */
+          , _react2.default.createElement('button', {
+            onClick: openAuthorWebsite,
+            className: "flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-md"                 ,}
+
+            , _react2.default.createElement(_lucidereact.ExternalLink, { size: 12,} ), "aeromechanic.fun"
+
+          )
+
+          /* Menu Button - removed relative positioning */
+          , _react2.default.createElement('button', {
+            ref: menuButtonRef,
+            onClick: handleMenuToggle,
+            className: "p-2 rounded-lg bg-white shadow-sm hover:shadow-md border border-slate-200/60 hover:border-blue-300 transition-all duration-200 text-slate-600 hover:text-blue-600"           ,}
+
+            , menuOpen ? _react2.default.createElement(_lucidereact.X, { size: 16,} ) : _react2.default.createElement(_lucidereact.Menu, { size: 16,} )
+          )
+        )
+      )
+
+      /* Main Content */
+      , _react2.default.createElement('div', { className: "flex flex-1 min-h-0"  ,}
+        /* Left Panel - Changed from w-1/2 to w-1/3 */
+        , _react2.default.createElement('div', { className: "w-1/3 bg-white/60 backdrop-blur-sm border-r border-slate-200/60 flex flex-col min-h-0"       ,}
+          /* Tabs */
+          , _react2.default.createElement('div', { className: "flex bg-slate-100/80 flex-shrink-0"  ,}
+            , [
+              { id: 'network', label: 'Network', color: 'blue' },
+              { id: 'animation', label: 'Animation', color: 'purple' },
+              { id: 'help', label: 'Help', color: 'emerald' }
+            ].map(tab => (
+              _react2.default.createElement('button', {
+                key: tab.id,
+                onClick: () => setActiveTab(tab.id),
+                className: `flex-1 py-4 px-4 text-sm font-medium border-b-2 transition-all duration-200 ${
+                  activeTab === tab.id
+                    ? `border-${tab.color}-500 bg-white text-${tab.color}-600 shadow-sm`
+                    : 'border-transparent hover:bg-white/50 text-slate-600 hover:text-slate-800'
+                }`,}
+
+                , tab.label
+              )
+            ))
+          )
+
+          /* Tab Content */
+          , _react2.default.createElement('div', { className: "flex-1 p-6 overflow-auto min-h-0"   ,}
+            , activeTab === 'network' && (
+              _react2.default.createElement('div', { className: "h-full flex flex-col min-h-0"   ,}
+                , _react2.default.createElement('textarea', {
+                  value: networkEditor,
+                  onChange: (e) => setNetworkEditor(e.target.value),
+                  className: "flex-1 bg-white border border-slate-200 rounded-xl p-4 font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 min-h-0 shadow-inner custom-scrollbar"               ,
+                  placeholder: "Enter network structure as JSON..."    ,}
+                )
+                , _react2.default.createElement('div', { className: "flex-shrink-0",}
+                  , networkError && _react2.default.createElement('div', { className: "text-red-500 text-sm mt-3 bg-red-50 p-3 rounded-lg border border-red-200"       ,}, networkError)
+                  , networkSuccess && _react2.default.createElement('div', { className: "text-green-600 text-sm mt-3 bg-green-50 p-3 rounded-lg border border-green-200"       ,}, networkSuccess)
+                )
+              )
+            )
+
+            , activeTab === 'animation' && (
+              _react2.default.createElement('div', { className: "h-full flex flex-col min-h-0"   ,}
+                , _react2.default.createElement('textarea', {
+                  value: animationEditor,
+                  onChange: (e) => setAnimationEditor(e.target.value),
+                  className: "flex-1 bg-white border border-slate-200 rounded-xl p-4 font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 min-h-0 shadow-inner custom-scrollbar"               ,
+                  placeholder: "Enter animation steps as JSON..."    ,}
+                )
+                , _react2.default.createElement('div', { className: "flex-shrink-0",}
+                  , animationError && _react2.default.createElement('div', { className: "text-red-500 text-sm mt-3 bg-red-50 p-3 rounded-lg border border-red-200"       ,}, animationError)
+                  , animationSuccess && _react2.default.createElement('div', { className: "text-green-600 text-sm mt-3 bg-green-50 p-3 rounded-lg border border-green-200"       ,}, animationSuccess)
+                )
+              )
+            )
+
+            , activeTab === 'help' && (
+              _react2.default.createElement('div', { className: "text-sm space-y-8 overflow-auto custom-scrollbar"   ,}
+                , _react2.default.createElement('div', { className: "bg-white rounded-xl p-6 shadow-sm border border-slate-200"     ,}
+                  , _react2.default.createElement('h4', { className: "text-emerald-600 font-semibold mb-3 text-base"   ,}, "Network Structure Format"  )
+                  , _react2.default.createElement('p', { className: "mb-4 text-slate-600" ,}, "Define your neural network structure:"    )
+                  , _react2.default.createElement('div', { className: "bg-slate-50 border border-slate-200 p-4 rounded-lg font-mono text-xs overflow-x-auto"       ,}
+, `{
+  "layers": [
+    {"name": "Input", "nodes": 3},
+    {"name": "Hidden", "nodes": 4}
+  ],
+  "connections": [...]
+}`
+                  )
+                )
+
+                , _react2.default.createElement('div', { className: "bg-white rounded-xl p-6 shadow-sm border border-slate-200"     ,}
+                  , _react2.default.createElement('h4', { className: "text-emerald-600 font-semibold mb-3 text-base"   ,}, "Connection Types" )
+                  , _react2.default.createElement('p', { className: "mb-3 text-slate-600" ,}, _react2.default.createElement('strong', null, "Fully Connected:" ))
+                  , _react2.default.createElement('div', { className: "bg-slate-50 border border-slate-200 p-4 rounded-lg font-mono text-xs overflow-x-auto mb-4"        ,}
+, `{
+  "type": "fully_connected",
+  "from": 0,  // Layer index
+  "to": 1     // Layer index
+}`
+                  )
+                  , _react2.default.createElement('p', { className: "my-3 text-slate-600" ,}, _react2.default.createElement('strong', null, "Custom Connections:" ))
+                  , _react2.default.createElement('div', { className: "bg-slate-50 border border-slate-200 p-4 rounded-lg font-mono text-xs overflow-x-auto"       ,}
+, `{
+  "type": "custom",
+  "links": [
+    {"from": {"layer": 0, "node": 0}, "to": {"layer": 1, "node": 0}}
+  ]
+}`
+                  )
+                )
+
+                , _react2.default.createElement('div', { className: "bg-white rounded-xl p-6 shadow-sm border border-slate-200"     ,}
+                  , _react2.default.createElement('h4', { className: "text-emerald-600 font-semibold mb-3 text-base"   ,}, "Animation Format" )
+                  , _react2.default.createElement('div', { className: "bg-slate-50 border border-slate-200 p-4 rounded-lg font-mono text-xs overflow-x-auto"       ,}
+, `{
+  "steps": [
+    {
+      "name": "Step Name",
+      "duration": 1000,
+      "glowNodes": ["0-0", "0-1"],
+      "glowLinks": ["0-0_1-0"],
+      "nodeColors": {"0-0": "#f97316"}
+    }
+  ]
+}`
+                  )
+                )
+
+                , _react2.default.createElement('div', { className: "bg-white rounded-xl p-6 shadow-sm border border-slate-200"     ,}
+                  , _react2.default.createElement('h4', { className: "text-emerald-600 font-semibold mb-3 text-base"   ,}, "ID Reference" )
+                  , _react2.default.createElement('div', { className: "space-y-2 text-slate-600" ,}
+                    , _react2.default.createElement('div', { className: "flex items-center gap-2"  ,}
+                      , _react2.default.createElement('span', { className: "font-medium",}, "Node IDs:" )
+                      , _react2.default.createElement('code', { className: "bg-slate-100 px-2 py-1 rounded text-xs"    ,}, "layer-node")
+                      , _react2.default.createElement('span', { className: "text-xs",}, "(e.g., \"0-1\")" )
+                    )
+                    , _react2.default.createElement('div', { className: "flex items-center gap-2"  ,}
+                      , _react2.default.createElement('span', { className: "font-medium",}, "Link IDs:" )
+                      , _react2.default.createElement('code', { className: "bg-slate-100 px-2 py-1 rounded text-xs"    ,}, "from_to")
+                      , _react2.default.createElement('span', { className: "text-xs",}, "(e.g., \"0-1_1-0\")" )
+                    )
+                  )
+                )
+
+                , _react2.default.createElement('div', { className: "bg-white rounded-xl p-6 shadow-sm border border-slate-200"     ,}
+                  , _react2.default.createElement('h4', { className: "text-emerald-600 font-semibold mb-3 text-base"   ,}, "Controls")
+                  , _react2.default.createElement('div', { className: "space-y-2 text-slate-600" ,}
+                    , _react2.default.createElement('div', null, _react2.default.createElement('strong', null, "Play/Pause:"), " Auto animation playback"   )
+                    , _react2.default.createElement('div', null, _react2.default.createElement('strong', null, "Next/Previous:"), " Manual step navigation"   )
+                    , _react2.default.createElement('div', null, _react2.default.createElement('strong', null, "Reset:"), " Return to initial state"    )
+                    , _react2.default.createElement('div', null, _react2.default.createElement('strong', null, "Interval Spinner:" ), " Adjust auto-play speed (500-5000ms)"    )
+                  )
+                )
+              )
+            )
+          )
+        )
+
+        /* Right Panel - Visualization - Changed from w-1/2 to w-2/3 */
+        , _react2.default.createElement('div', { className: "w-2/3 bg-white/40 backdrop-blur-sm flex flex-col min-h-0"     ,}
+          , _react2.default.createElement('div', { className: "flex-1 relative min-h-0 bg-gradient-to-br from-white/50 to-slate-50/50"     ,}
+            , _react2.default.createElement('svg', { ref: svgRef, className: "w-full h-full" ,}
+              /* Links */
+              , links.map(link => (
+                _react2.default.createElement('line', {
+                  key: link.id,
+                  x1: link.from.x,
+                  y1: link.from.y,
+                  x2: link.to.x,
+                  y2: link.to.y,
+                  stroke: isLinkGlowing(link.id) ? '#f59e0b' : '#94a3b8',
+                  strokeWidth: isLinkGlowing(link.id) ? 4 : 2,
+                  style: {
+                    filter: isLinkGlowing(link.id) ? 'drop-shadow(0 0 8px #f59e0b)' : 'none',
+                    transition: 'all 0.3s ease'
+                  },}
+                )
+              ))
+
+              /* Layer Labels */
+              , _optionalChain([networkData, 'optionalAccess', _18 => _18.layers, 'access', _19 => _19.map, 'call', _20 => _20((layer, index) => {
+                const x = (_optionalChain([svgRef, 'access', _21 => _21.current, 'optionalAccess', _22 => _22.getBoundingClientRect, 'call', _23 => _23(), 'access', _24 => _24.width]) || 800) / (networkData.layers.length + 1) * (index + 1);
+                return (
+                  _react2.default.createElement('text', {
+                    key: `label-${index}`,
+                    x: x,
+                    y: 30,
+                    textAnchor: "middle",
+                    fill: "#475569",
+                    fontSize: "14",
+                    fontWeight: "600",}
+
+                    , layer.name
+                  )
+                );
+              })])
+
+              /* Nodes */
+              , nodes.map(node => (
+                _react2.default.createElement('circle', {
+                  key: node.id,
+                  cx: node.x,
+                  cy: node.y,
+                  r: node.radius,
+                  fill: nodeColors[node.id] || '#3b82f6',
+                  stroke: "white",
+                  strokeWidth: isNodeGlowing(node.id) ? 4 : 3,
+                  style: {
+                    filter: isNodeGlowing(node.id) 
+                      ? `drop-shadow(0 0 12px ${nodeColors[node.id] || '#3b82f6'})` 
+                      : 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
+                    transition: 'all 0.3s ease'
+                  },}
+                )
+              ))
+            )
+
+            /* Animation Controls with Status */
+            , _react2.default.createElement('div', { className: "absolute bottom-6 left-0 right-0 flex items-center justify-between px-6"       ,}
+              /* Step Info */
+              , _react2.default.createElement('div', { className: "flex items-center gap-4 text-sm bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg border border-slate-200/60"           ,}
+                , _react2.default.createElement('div', { className: "flex items-center gap-2"  ,}
+                  , _react2.default.createElement('span', { className: "text-slate-600 font-medium" ,}, "Step:")
+                  , _react2.default.createElement('span', { className: "text-blue-600 font-semibold" ,}, getCurrentStepInfo())
+                )
+                , _react2.default.createElement('div', { className: "flex items-center gap-2"  ,}
+                  , _react2.default.createElement('span', { className: "text-slate-600 font-medium" ,}, "Status:")
+                  , _react2.default.createElement('span', { className: `font-semibold ${isPlaying ? 'text-green-600' : 'text-slate-500'}`,}
+                    , isPlaying ? 'Playing' : 'Stopped'
+                  )
+                )
+              )
+
+              /* Interval Control */
+              , _react2.default.createElement('div', { className: "flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg border border-slate-200/60"          ,}
+                , _react2.default.createElement(_lucidereact.Clock, { size: 16, className: "text-slate-600",} )
+                , _react2.default.createElement('span', { className: "text-xs text-slate-600 font-medium"  ,}, "Interval:")
+                , _react2.default.createElement('div', { className: "flex items-center" ,}
+                  , _react2.default.createElement('input', {
+                    type: "number",
+                    min: "500",
+                    max: "5000",
+                    step: "100",
+                    value: playbackInterval,
+                    onChange: (e) => handleIntervalChange(parseInt(e.target.value) || 1500),
+                    className: "interval-input w-16 px-2 py-1 text-xs text-center border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-400"            ,}
+                  )
+                  , _react2.default.createElement('span', { className: "text-xs text-slate-500 ml-1"  ,}, "ms")
+                )
+              )
+
+              /* Control Buttons */
+              , _react2.default.createElement('div', { className: "flex gap-3" ,}
+                , _react2.default.createElement('button', {
+                  onClick: previousStep,
+                  className: "p-3 bg-white/90 backdrop-blur-sm hover:bg-white border border-slate-200/60 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl text-slate-600 hover:text-slate-800"            ,}
+
+                  , _react2.default.createElement(_lucidereact.SkipBack, { size: 20,} )
+                )
+                , _react2.default.createElement('button', {
+                  onClick: playPause,
+                  className: "p-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"           ,}
+
+                  , isPlaying ? _react2.default.createElement(_lucidereact.Pause, { size: 20,} ) : _react2.default.createElement(_lucidereact.Play, { size: 20,} )
+                )
+                , _react2.default.createElement('button', {
+                  onClick: nextStep,
+                  className: "p-3 bg-white/90 backdrop-blur-sm hover:bg-white border border-slate-200/60 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl text-slate-600 hover:text-slate-800"            ,}
+
+                  , _react2.default.createElement(_lucidereact.SkipForward, { size: 20,} )
+                )
+                , _react2.default.createElement('button', {
+                  onClick: resetAnimation,
+                  className: "p-3 bg-white/90 backdrop-blur-sm hover:bg-white border border-slate-200/60 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl text-slate-600 hover:text-slate-800"            ,}
+
+                  , _react2.default.createElement(_lucidereact.RotateCcw, { size: 20,} )
+                )
+              )
+            )
+          )
+        )
+      )
+
+      /* Menu Dropdown - Repositioned outside main container structure */
+      , menuOpen && (
+        _react2.default.createElement(_react2.default.Fragment, null
+          /* Backdrop to close menu when clicking outside */
+          , _react2.default.createElement('div', { 
+            className: "fixed inset-0 z-40"  , 
+            onClick: () => setMenuOpen(false),}
+          )
+
+          /* Menu dropdown - Fixed positioned at root level */
+          , _react2.default.createElement('div', { 
+            className: "fixed w-56 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50"       ,
+            style: { 
+              left: `${menuButtonPosition.x}px`, 
+              top: `${menuButtonPosition.y}px` 
+            },}
+
+            , _react2.default.createElement('div', { className: "py-2",}
+              , _react2.default.createElement('button', {
+                onClick: exportNetwork,
+                className: "w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-blue-50 transition-colors text-slate-700 hover:text-blue-700"          ,}
+
+                , _react2.default.createElement(_lucidereact.Download, { size: 16,} ), "Export Network"
+
+              )
+              , _react2.default.createElement('button', {
+                onClick: exportAnimation,
+                className: "w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-purple-50 transition-colors text-slate-700 hover:text-purple-700"          ,}
+
+                , _react2.default.createElement(_lucidereact.Download, { size: 16,} ), "Export Animation"
+
+              )
+              , _react2.default.createElement('button', {
+                onClick: () => _optionalChain([networkFileRef, 'access', _12 => _12.current, 'optionalAccess', _13 => _13.click, 'call', _14 => _14()]),
+                className: "w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-green-50 transition-colors text-slate-700 hover:text-green-700"          ,}
+
+                , _react2.default.createElement(_lucidereact.Upload, { size: 16,} ), "Import Network"
+
+              )
+              , _react2.default.createElement('button', {
+                onClick: () => _optionalChain([animationFileRef, 'access', _15 => _15.current, 'optionalAccess', _16 => _16.click, 'call', _17 => _17()]),
+                className: "w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-orange-50 transition-colors text-slate-700 hover:text-orange-700"          ,}
+
+                , _react2.default.createElement(_lucidereact.Upload, { size: 16,} ), "Import Animation"
+
+              )
+            )
+          )
+        )
+      )
+
+      /* Hidden file inputs */
+      , _react2.default.createElement('input', {
+        ref: networkFileRef,
+        type: "file",
+        accept: ".json",
+        onChange: importNetwork,
+        className: "hidden",}
+      )
+      , _react2.default.createElement('input', {
+        ref: animationFileRef,
+        type: "file",
+        accept: ".json",
+        onChange: importAnimation,
+        className: "hidden",}
+      )
+    )
+  );
+}
+
+exports. default = NeuralNetworkVisualizer;
+</script></head>
+  <body>
+  
+
+<div id="preview-app"></div>
+</body></html>
