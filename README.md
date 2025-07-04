@@ -1,6 +1,6 @@
 # Neural Network Concept Visualization
 
-Web Application: [Makedown](https://makedown.vercel.app/)
+Web Application: [Neural Network Concept Visualization](https://neural-network-concept-visualization.vercel.app/)
 
 A web based visualization of neural network concept.
 
